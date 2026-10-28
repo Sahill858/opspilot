@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from sqlalchemy.exc import IntegrityError
 from app.auth.dependencies import get_current_user
 from app.auth.permissions import require_roles
 from app.database.dependencies import get_db
 from app.models.approval import Approval
 from app.models.request import Request
 from app.models.user import User
+from app.schemas import approval
 from app.schemas.approval import ApprovalCreate, ApprovalResponse
 from app.models.workflow_step import WorkflowStep
 
@@ -32,10 +33,12 @@ def create_approval(
 ):
     # 1. Find the request within the user's organization
     request = db.scalar(
-        select(Request).where(
+        select(Request)
+        .where(
             Request.id == request_id,
             Request.organization_id == current_user.organization_id,
         )
+        .with_for_update()
     )
 
     if not request:
@@ -92,21 +95,14 @@ def create_approval(
 
     if existing_approval:
         raise HTTPException(
-            status_code=409,
+            status_code=status.HTTP_409_CONFLICT,
             detail="You have already submitted a decision for this request",
-        )
-
-
-    if existing_approval:
-        raise HTTPException(
-            status_code=409,
-            detail="You have already submitted a decision for this workflow step",
         )
 
     # 7. Check whether the user has the required role
     if current_user.role != current_workflow_step.approver_role:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail=(
                 f"This step requires the "
                 f"'{current_workflow_step.approver_role}' role"
@@ -144,6 +140,13 @@ def create_approval(
         db.add(approval)
         db.commit()
         db.refresh(approval)
+
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This approval conflicts with an existing database record",
+        ) from exc
 
     except Exception:
         db.rollback()

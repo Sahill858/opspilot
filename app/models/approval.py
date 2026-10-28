@@ -1,6 +1,6 @@
 from datetime import datetime,timezone
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -8,6 +8,13 @@ from app.database.base import Base
 
 class Approval(Base):
     __tablename__ = "approvals"
+    __table_args__ = (
+        UniqueConstraint(
+            "request_id",
+            "approver_id",
+            name="uq_approval_request_approver",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
