@@ -9,3 +9,14 @@ __pycache__/
 # Virtual environment and test cache
 venv/
 .pytest_cache/
+
+# Additional virtual environments
+.venv/
+.venv-check/
+
+# Test and coverage artifacts
+.coverage
+htmlcov/
+
+# Local IDE settings
+.vscode/
