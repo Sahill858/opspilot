@@ -14,6 +14,7 @@ from app.schemas.request import (
 from fastapi import HTTPException
 from sqlalchemy import select
 from app.models.workflow import Workflow
+from app.models.workflow_step import WorkflowStep
 
 router = APIRouter(
     prefix="/requests",
@@ -81,7 +82,32 @@ def list_requests(
     ).all()
 
     return requests
+@router.get(
+    "/pending-approvals",
+    response_model=list[RequestResponse],
+)
+def get_pending_approvals(
+    current_user: User = Depends(
+        require_roles("admin", "manager", "approver")
+    ),
+    db: Session = Depends(get_db),
+):
+    pending_requests = db.scalars(
+        select(Request)
+        .join(
+            WorkflowStep,
+            (WorkflowStep.workflow_id == Request.workflow_id)
+            & (WorkflowStep.step_order == Request.current_step),
+        )
+        .where(
+            Request.organization_id == current_user.organization_id,
+            Request.status == "pending",
+            WorkflowStep.approver_role == current_user.role,
+        )
+        .order_by(Request.created_at.desc())
+    ).all()
 
+    return pending_requests
 @router.get(
     "/{request_id}",
     response_model=RequestResponse,
