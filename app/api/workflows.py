@@ -140,3 +140,20 @@ def get_workflow(
         "created_at": workflow.created_at,
         "steps": steps,
     }
+
+@router.get(
+    "",
+    response_model=list[WorkflowResponse],
+)
+def get_workflows(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    workflows = db.scalars(
+        select(Workflow).where(
+            Workflow.organization_id == current_user.organization_id,
+            Workflow.is_active.is_(True),
+        ).order_by(Workflow.created_at.desc())
+    ).all()
+
+    return workflows
