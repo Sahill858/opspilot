@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -25,3 +26,8 @@ class ApprovalResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ApprovalHistoryResponse(ApprovalResponse):
+    approver_name: str | None = None
+    approver_role: str | None = None

@@ -8,7 +8,11 @@ from app.database.dependencies import get_db
 from app.models.approval import Approval
 from app.models.request import Request
 from app.models.user import User
-from app.schemas import approval
+from app.schemas.approval import (
+    ApprovalCreate,
+    ApprovalResponse,
+    ApprovalHistoryResponse,
+)
 from app.schemas.approval import ApprovalCreate, ApprovalResponse
 from app.models.workflow_step import WorkflowStep
 
@@ -156,9 +160,10 @@ def create_approval(
 
 
 
+
 @router.get(
     "/{request_id}/approvals",
-    response_model=list[ApprovalResponse],
+    response_model=list[ApprovalHistoryResponse],
 )
 def get_approval_history(
     request_id: int,
@@ -178,10 +183,37 @@ def get_approval_history(
             detail="Request not found",
         )
 
-    approvals = db.scalars(
-        select(Approval)
-        .where(Approval.request_id == request_id)
+    results = db.execute(
+        select(
+            Approval,
+            User.full_name,
+            User.role,
+        )
+        .outerjoin(
+            User,
+            Approval.approver_id == User.id,
+        )
+        .where(
+            Approval.request_id == request_id
+        )
         .order_by(Approval.created_at.desc())
     ).all()
 
-    return approvals
+    approval_history = []
+
+    for approval_record, approver_name, approver_role in results:
+        approval_history.append(
+            {
+                "id": approval_record.id,
+                "request_id": approval_record.request_id,
+                "workflow_step_id": approval_record.workflow_step_id,
+                "approver_id": approval_record.approver_id,
+                "approver_name": approver_name,
+                "approver_role": approver_role,
+                "decision": approval_record.decision,
+                "comment": approval_record.comment,
+                "created_at": approval_record.created_at,
+            }
+        )
+
+    return approval_history
