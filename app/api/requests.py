@@ -82,6 +82,26 @@ def list_requests(
     ).all()
 
     return requests
+
+@router.get(
+    "/my-requests",
+    response_model=list[RequestResponse],
+)
+def get_my_requests(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    my_requests = db.scalars(
+        select(Request)
+        .where(
+            Request.organization_id == current_user.organization_id,
+            Request.created_by == current_user.id,
+        )
+        .order_by(Request.created_at.desc())
+    ).all()
+
+    return my_requests
+
 @router.get(
     "/pending-approvals",
     response_model=list[RequestResponse],
