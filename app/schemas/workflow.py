@@ -10,6 +10,17 @@ class WorkflowCreate(BaseModel):
         max_length=500,
     )
 
+class WorkflowUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=150,
+    )
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+    )
+
 
 class WorkflowResponse(BaseModel):
     id: int
@@ -28,7 +39,18 @@ class WorkflowStepCreate(BaseModel):
     step_order: int = Field(ge=1)
     approver_role: str = Field(min_length=3, max_length=50)
 
-
+class WorkflowStepUpdate(BaseModel):
+    name: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=150,
+    )
+    approver_role: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=50,
+    )
+    
 class WorkflowStepResponse(BaseModel):
     id: int
     workflow_id: int
