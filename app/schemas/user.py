@@ -19,3 +19,14 @@ class UserResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
+class UserRoleUpdate(BaseModel):
+    role: str = Field(
+        min_length=3,
+        max_length=50,
+    )
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool

@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from sqlalchemy import text
-
+from app.api.users import router as users_router
 from app.database.session import engine
 from app.api.auth import router as auth_router
 from app.api.requests import router as requests_router
 from app.api.approvals import router as approvals_router
 from app.api.workflows import router as workflows_router
+
 
 app = FastAPI(
     title="OpsPilot API",
@@ -16,6 +17,7 @@ app.include_router(auth_router)
 app.include_router(requests_router)
 app.include_router(approvals_router)
 app.include_router(workflows_router)
+app.include_router(users_router)
 
 @app.get("/health")
 def health_check():
