@@ -1,4 +1,4 @@
-
+import EditOrganizationForm from "@/components/organizations/EditOrganizationForm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -46,6 +46,27 @@ export default async function OrganizationSettingsPage() {
   }
 
   const organization: Organization = await response.json();
+  const userResponse = await fetch(
+  `${process.env.OPSPILOT_API_URL}/auth/me`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  }
+);
+
+if (userResponse.status === 401) {
+  redirect("/login");
+}
+
+if (!userResponse.ok) {
+  throw new Error("Unable to load user information");
+}
+
+const currentUser = await userResponse.json();
+
+const isAdmin = currentUser.role === "admin";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -96,13 +117,15 @@ export default async function OrganizationSettingsPage() {
 
             <div className="space-y-5">
               <div>
-                <p className="text-sm text-slate-500 mb-1">
-                  Organization Name
-                </p>
-                <p className="font-medium text-slate-900">
-                  {organization.name}
-                </p>
-              </div>
+  <p className="text-sm text-slate-500 mb-3">
+    Organization Name
+  </p>
+
+  <EditOrganizationForm
+  currentName={organization.name}
+  isAdmin={isAdmin}
+/>
+</div>
 
               <div>
                 <p className="text-sm text-slate-500 mb-1">
