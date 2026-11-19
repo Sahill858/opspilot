@@ -12,6 +12,8 @@ from app.models.user import User
 from app.models.request import Request
 from app.models.workflow import Workflow
 from app.models.workflow_step import WorkflowStep
+from app.models.notification import Notification
+from app.models.activity_log import ActivityLog
 
 config = context.config
 

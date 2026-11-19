@@ -7,6 +7,8 @@ from app.api.requests import router as requests_router
 from app.api.approvals import router as approvals_router
 from app.api.workflows import router as workflows_router
 from app.api import auth, requests, approvals, workflows, users, organizations
+from app.api import notifications
+from app.api import activity_logs
 
 app = FastAPI(
     title="OpsPilot API",
@@ -19,6 +21,8 @@ app.include_router(approvals_router)
 app.include_router(workflows_router)
 app.include_router(users_router)
 app.include_router(organizations.router)
+app.include_router(notifications.router)
+app.include_router(activity_logs.router)
 
 @app.get("/health")
 def health_check():

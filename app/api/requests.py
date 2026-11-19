@@ -1,7 +1,7 @@
 from app.auth.permissions import require_roles
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-
+from app.services.notification_service import create_notification
 from app.auth.dependencies import get_current_user
 from app.database.dependencies import get_db
 from app.models.request import Request
@@ -11,6 +11,7 @@ from app.schemas.request import (
     RequestResponse,
     RequestStatusUpdate,
 )
+from app.services.activity_log_service import create_activity_log
 from fastapi import HTTPException
 from sqlalchemy import select
 from app.models.workflow import Workflow
@@ -22,6 +23,7 @@ router = APIRouter(
 )
 
 
+
 @router.post(
     "",
     response_model=RequestResponse,
@@ -31,23 +33,39 @@ def create_request(
     request_data: RequestCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-):  
+):
     workflow = None
 
     if request_data.workflow_id is not None:
         workflow = db.scalar(
             select(Workflow).where(
-            Workflow.id == request_data.workflow_id,
-            Workflow.organization_id == current_user.organization_id,
-            Workflow.is_active.is_(True),
+                Workflow.id == request_data.workflow_id,
+                Workflow.organization_id == current_user.organization_id,
+                Workflow.is_active.is_(True),
+            )
         )
-    )
 
     if not workflow:
         raise HTTPException(
             status_code=404,
             detail="Workflow not found or inactive",
         )
+
+    # Find the first approval step.
+    first_step = db.scalar(
+        select(WorkflowStep).where(
+            WorkflowStep.workflow_id == workflow.id,
+            WorkflowStep.step_order == 1,
+        )
+    )
+
+    if not first_step:
+        raise HTTPException(
+            status_code=400,
+            detail="Workflow does not have an approval step",
+        )
+
+    # Create the request.
     new_request = Request(
         organization_id=current_user.organization_id,
         created_by=current_user.id,
@@ -56,15 +74,55 @@ def create_request(
         category=request_data.category,
         priority=request_data.priority,
         status="pending",
-        workflow_id=workflow.id if workflow else None,
+        workflow_id=workflow.id,
         current_step=1,
     )
 
     db.add(new_request)
+    db.flush()  # Generates the request ID without committing.
+
+    create_activity_log(
+        db=db,
+        organization_id=current_user.organization_id,
+        user_id=current_user.id,
+        action="request_created",
+        description=(
+            f'{current_user.full_name} created request '
+            f'"{new_request.title}".'
+        ),
+        entity_type="request",
+        entity_id=new_request.id,
+    )
+    # Find active users who can approve this step.
+    approvers = db.scalars(
+        select(User).where(
+            User.organization_id == current_user.organization_id,
+            User.role == first_step.approver_role,
+            User.is_active.is_(True),
+        )
+    ).all()
+
+    # Generate notifications for matching approvers.
+    for approver in approvers:
+        create_notification(
+            db=db,
+            organization_id=current_user.organization_id,
+            user_id=approver.id,
+            title="New Request Requires Your Approval",
+            message=(
+                f'{current_user.full_name} submitted '
+                f'"{new_request.title}". Please review it.'
+            ),
+            notification_type="approval",
+            link="/approvals",
+        )
+
+    # Save request and notifications together.
     db.commit()
     db.refresh(new_request)
 
     return new_request
+
 
 
 @router.get(
