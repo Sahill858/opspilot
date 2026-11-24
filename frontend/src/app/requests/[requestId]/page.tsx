@@ -143,7 +143,7 @@ if (request.workflow_id) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar role={user.role} />
 
       <main className="md:ml-64 p-4 md:p-6">
         <div className="max-w-6xl mx-auto">

@@ -2,7 +2,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
 from app.auth.permissions import require_roles
 from app.database.dependencies import get_db
 from app.models.activity_log import ActivityLog
@@ -24,7 +23,14 @@ def get_activity_logs(
     current_user: User = Depends(require_roles("admin")),
 ):
     logs = (
-        db.query(ActivityLog)
+        db.query(
+            ActivityLog,
+            User.full_name.label("user_name"),
+        )
+        .outerjoin(
+            User,
+            ActivityLog.user_id == User.id,
+        )
         .filter(
             ActivityLog.organization_id == current_user.organization_id,
         )
@@ -33,4 +39,13 @@ def get_activity_logs(
         .all()
     )
 
-    return logs
+    return [
+        {
+            **{
+                column.name: getattr(log, column.name)
+                for column in ActivityLog.__table__.columns
+            },
+            "user_name": user_name,
+        }
+        for log, user_name in logs
+    ]

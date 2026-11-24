@@ -12,7 +12,7 @@ export default async function NewRequestPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar role={user.role} />
 
       {/* Main Content */}
       <main className="min-w-0 flex-1 p-4 pt-20 md:ml-64 md:p-8">

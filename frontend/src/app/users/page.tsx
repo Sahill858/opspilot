@@ -2,6 +2,7 @@
 import { cookies } from "next/headers";
 import Sidebar from "@/components/dashboard/Sidebar";
 import UsersTable from "@/components/users/UsersTable";
+import { getAuthenticatedUser } from "@/lib/auth";
 import {
   Users,
   UserCheck,
@@ -18,6 +19,8 @@ interface User {
 }
 
 export default async function UsersPage() {
+  const currentUser = await getAuthenticatedUser();
+
   const cookieStore = await cookies();
   const token = cookieStore.get("opspilot_token")?.value;
 
@@ -68,7 +71,7 @@ export default async function UsersPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar role={currentUser.role} />
 
       <main className="min-w-0 flex-1 p-4 pt-20 md:ml-64 md:p-8">
         {/* Header */}

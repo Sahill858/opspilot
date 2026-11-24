@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Trash2, ArrowLeft, Loader2 } from "lucide-react";
@@ -18,6 +18,26 @@ interface CreatedWorkflow {
 
 export default function CreateWorkflowPage() {
   const router = useRouter();
+  const [role, setRole] = useState<string | undefined>(undefined);
+
+useEffect(() => {
+  async function fetchUserRole() {
+    try {
+      const response = await fetch("/api/auth/me", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) return;
+
+      const user = await response.json();
+      setRole(user.role);
+    } catch (error) {
+      console.error("Unable to fetch user role:", error);
+    }
+  }
+
+  fetchUserRole();
+}, []);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -154,7 +174,7 @@ export default function CreateWorkflowPage() {
 
   return (
     <>
-    <Sidebar />
+    <Sidebar role={role} />
     <main className="min-w-0 flex-1 p-4 pt-20 md:ml-64 md:p-8">
       <div className="mx-auto max-w-3xl">
 

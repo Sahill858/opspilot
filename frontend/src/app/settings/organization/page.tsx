@@ -2,6 +2,7 @@ import EditOrganizationForm from "@/components/organizations/EditOrganizationFor
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { getAuthenticatedUser } from "@/lib/auth";
 import Sidebar from "@/components/dashboard/Sidebar";
 import {
   Building2,
@@ -70,7 +71,7 @@ const isAdmin = currentUser.role === "admin";
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Sidebar />
+      <Sidebar role={currentUser.role} />
 
       <main className="md:ml-64 p-6 md:p-8">
         <div className="max-w-4xl mx-auto">

@@ -71,7 +71,7 @@ export default async function UserDetailsPage({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar role={user.role} />
 
       <main className="min-w-0 p-4 pt-20 md:ml-64 md:p-8">
         <div className="mx-auto max-w-5xl">

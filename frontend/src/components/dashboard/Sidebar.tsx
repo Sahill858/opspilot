@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-
+import NotificationBell from "@/components/notifications/NotificationBell";
 import {
   LayoutDashboard,
   FileText,
@@ -14,6 +14,7 @@ import {
   PlusCircle,
   Menu,
   X,
+  Activity,
 } from "lucide-react";
 
 import { usePathname, useRouter } from "next/navigation";
@@ -28,7 +29,11 @@ const menuItems = [
   { name: "Users", icon: Users, href: "/users" },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  role?: string;
+}
+
+export default function Sidebar({ role }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -65,14 +70,18 @@ export default function Sidebar() {
           </span>
         </div>
 
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isOpen}
-          className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2">
+  <NotificationBell />
+
+  <button
+    onClick={() => setIsOpen(!isOpen)}
+    aria-label={isOpen ? "Close menu" : "Open menu"}
+    aria-expanded={isOpen}
+    className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+  >
+    {isOpen ? <X size={24} /> : <Menu size={24} />}
+  </button>
+</div>
       </div>
 
       {/* Mobile Overlay */}
@@ -112,7 +121,12 @@ export default function Sidebar() {
             Menu
           </p>
 
-          {menuItems.map((item) => {
+          {[
+  ...menuItems,
+  ...(role === "admin"
+    ? [{ name: "Activity Logs", icon: Activity, href: "/activity-logs" }]
+    : []),
+].map((item) => {
             const Icon = item.icon;
             const isActive =
               item.href !== "#" && pathname === item.href;
@@ -137,7 +151,14 @@ export default function Sidebar() {
         </nav>
 
         {/* Settings and Logout */}
-        <div className="border-t border-gray-200 pt-4">
+        {/* Notifications, Settings and Logout */}
+<div className="border-t border-gray-200 pt-4">
+  <div className="mb-2 flex items-center justify-between px-3">
+    <span className="text-sm font-medium text-gray-600">
+      Notifications
+    </span>
+    <NotificationBell />
+  </div>
           <Link
             href="#"
             onClick={() => setIsOpen(false)}

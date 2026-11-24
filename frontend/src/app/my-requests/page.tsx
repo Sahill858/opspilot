@@ -11,6 +11,7 @@ import {
   XCircle,
   Eye,
 } from "lucide-react";
+import { getAuthenticatedUser } from "@/lib/auth";
 
 interface RequestItem {
   id: number;
@@ -64,6 +65,7 @@ function getPriorityStyle(priority: string) {
 }
 
 export default async function MyRequestsPage() {
+  const user = await getAuthenticatedUser();
   const cookieStore = await cookies();
   const token = cookieStore.get("opspilot_token")?.value;
 
@@ -105,7 +107,7 @@ export default async function MyRequestsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar role={user.role} />
 
       <main className="min-w-0 flex-1 p-4 pt-20 md:ml-64 md:p-8">
         {/* Page Header */}
