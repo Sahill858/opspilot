@@ -32,6 +32,10 @@ export default function ActivityLogsTable({
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
+
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const actions = useMemo(
@@ -51,25 +55,43 @@ export default function ActivityLogsTable({
   );
 
   const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const searchText = search.toLowerCase();
+  return logs.filter((log) => {
+    const searchText = search.toLowerCase();
 
-      const matchesSearch =
-        log.description.toLowerCase().includes(searchText) ||
-        log.action.toLowerCase().includes(searchText) ||
-        String(log.user_id ?? "").includes(searchText) ||
-        String(log.entity_id ?? "").includes(searchText);
+    const matchesSearch =
+      log.description.toLowerCase().includes(searchText) ||
+      log.action.toLowerCase().includes(searchText) ||
+      String(log.user_id ?? "").includes(searchText) ||
+      String(log.entity_id ?? "").includes(searchText);
 
-      const matchesAction =
-        actionFilter === "all" || log.action === actionFilter;
+    const matchesAction =
+      actionFilter === "all" || log.action === actionFilter;
 
-      const matchesEntity =
-        entityFilter === "all" ||
-        log.entity_type?.toLowerCase() === entityFilter.toLowerCase();
+    const matchesEntity =
+      entityFilter === "all" ||
+      log.entity_type?.toLowerCase() === entityFilter.toLowerCase();
 
-      return matchesSearch && matchesAction && matchesEntity;
-    });
-  }, [logs, search, actionFilter, entityFilter]);
+    const logDate = new Date(log.created_at);
+
+    const matchesStartDate =
+      !startDate ||
+      logDate >= new Date(`${startDate}T00:00:00`);
+
+    const matchesEndDate =
+      !endDate ||
+      logDate < new Date(
+        new Date(`${endDate}T00:00:00`).getTime() + 24 * 60 * 60 * 1000
+      );
+
+    return (
+      matchesSearch &&
+      matchesAction &&
+      matchesEntity &&
+      matchesStartDate &&
+      matchesEndDate
+    );
+  });
+}, [logs, search, actionFilter, entityFilter, startDate, endDate]);
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
 
@@ -119,6 +141,27 @@ export default function ActivityLogsTable({
               placeholder="Search activities..."
               className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
+            <input
+  type="date"
+  value={startDate}
+  max={endDate || undefined}
+  onChange={(event) => {
+    setStartDate(event.target.value);
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
+/>
+
+<input
+  type="date"
+  value={endDate}
+  min={startDate || undefined}
+  onChange={(event) => {
+    setEndDate(event.target.value);
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
+/>
           </div>
 
           <select
@@ -145,6 +188,7 @@ export default function ActivityLogsTable({
             }}
             className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
           >
+
             <option value="all">All Resources</option>
             {entityTypes.map((type) => (
               <option key={type} value={type}>
@@ -152,6 +196,20 @@ export default function ActivityLogsTable({
               </option>
             ))}
           </select>
+          <button
+  type="button"
+  onClick={() => {
+    setSearch("");
+    setActionFilter("all");
+    setEntityFilter("all");
+    setStartDate("");
+    setEndDate("");
+    setCurrentPage(1);
+  }}
+  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+>
+  Clear Filters
+</button>
         </div>
       </div>
 
