@@ -159,7 +159,7 @@ export default function ActivityLogsTable({
         <table className="w-full min-w-[850px] text-left text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="px-5 py-4 font-semibold">User ID</th>
+              <th className="px-5 py-4 font-semibold">User</th>
               <th className="px-5 py-4 font-semibold">Action</th>
               <th className="px-5 py-4 font-semibold">Description</th>
               <th className="px-5 py-4 font-semibold">Resource</th>
