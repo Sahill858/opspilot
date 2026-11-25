@@ -1,12 +1,13 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
+
 import {
   Search,
   ChevronLeft,
   ChevronRight,
   Activity,
+  Download,
 } from "lucide-react";
 
 interface ActivityLog {
@@ -74,14 +75,15 @@ export default function ActivityLogsTable({
     const logDate = new Date(log.created_at);
 
     const matchesStartDate =
-      !startDate ||
-      logDate >= new Date(`${startDate}T00:00:00`);
+      !startDate || logDate >= new Date(`${startDate}T00:00:00`);
 
     const matchesEndDate =
       !endDate ||
-      logDate < new Date(
-        new Date(`${endDate}T00:00:00`).getTime() + 24 * 60 * 60 * 1000
-      );
+      logDate <
+        new Date(
+          new Date(`${endDate}T00:00:00`).getTime() +
+            24 * 60 * 60 * 1000
+        );
 
     return (
       matchesSearch &&
@@ -92,7 +94,56 @@ export default function ActivityLogsTable({
     );
   });
 }, [logs, search, actionFilter, entityFilter, startDate, endDate]);
+function escapeCSV(value: string | number | null) {
+  const text = String(value ?? "");
+  const safeText = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
 
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+function exportToCSV() {
+  const headers = [
+    "User",
+    "User ID",
+    "Action",
+    "Description",
+    "Resource",
+    "Resource ID",
+    "Date & Time",
+  ];
+
+  const rows = filteredLogs.map((log) => [
+    log.user_name ?? "System",
+    log.user_id,
+    log.action,
+    log.description,
+    log.entity_type,
+    log.entity_id,
+    new Date(log.created_at).toLocaleString("en-IN"),
+  ]);
+
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map(escapeCSV).join(","))
+    .join("\r\n");
+
+  const blob = new Blob(["\uFEFF", csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `opspilot-activity-logs-${new Date()
+    .toISOString()
+    .slice(0, 10)}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
 
   const safePage = Math.min(currentPage, Math.max(totalPages, 1));
@@ -115,14 +166,27 @@ export default function ActivityLogsTable({
   return (
     <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-200 p-5">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Recent Activities
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Search and review organization activity.
-          </p>
-        </div>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h2 className="text-lg font-semibold text-gray-900">
+      Recent Activities
+    </h2>
+
+    <p className="mt-1 text-sm text-gray-500">
+      Search and review organization activity.
+    </p>
+  </div>
+
+  <button
+    type="button"
+    onClick={exportToCSV}
+    disabled={filteredLogs.length === 0}
+    className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    <Download size={18} />
+    Export CSV
+  </button>
+</div>
 
         
 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
