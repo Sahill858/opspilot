@@ -124,93 +124,111 @@ export default function ActivityLogsTable({
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row">
-          <div className="relative flex-1">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
+        
+<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+  {/* Search */}
+  <div className="relative sm:col-span-2 xl:col-span-2">
+    <Search
+      size={18}
+      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+    />
+    <input
+      type="text"
+      value={search}
+      onChange={(event) => {
+        setSearch(event.target.value);
+        setCurrentPage(1);
+      }}
+      placeholder="Search activities..."
+      className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+    />
+  </div>
 
-            <input
-              type="text"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Search activities..."
-              className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
-            <input
-  type="date"
-  value={startDate}
-  max={endDate || undefined}
-  onChange={(event) => {
-    setStartDate(event.target.value);
-    setCurrentPage(1);
-  }}
-  className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
-/>
+  {/* From Date */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-medium text-gray-600">
+      From Date
+    </label>
+    <input
+      type="date"
+      value={startDate}
+      max={endDate || undefined}
+      onChange={(event) => {
+        setStartDate(event.target.value);
+        setCurrentPage(1);
+      }}
+      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
+    />
+  </div>
 
-<input
-  type="date"
-  value={endDate}
-  min={startDate || undefined}
-  onChange={(event) => {
-    setEndDate(event.target.value);
-    setCurrentPage(1);
-  }}
-  className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
-/>
-          </div>
+  {/* To Date */}
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-medium text-gray-600">
+      To Date
+    </label>
+    <input
+      type="date"
+      value={endDate}
+      min={startDate || undefined}
+      onChange={(event) => {
+        setEndDate(event.target.value);
+        setCurrentPage(1);
+      }}
+      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
+    />
+  </div>
 
-          <select
-            value={actionFilter}
-            onChange={(event) => {
-              setActionFilter(event.target.value);
-              setCurrentPage(1);
-            }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
-          >
-            <option value="all">All Actions</option>
-            {actions.map((action) => (
-              <option key={action} value={action}>
-                {action.replaceAll("_", " ")}
-              </option>
-            ))}
-          </select>
+  {/* Action Filter */}
+  <select
+    value={actionFilter}
+    onChange={(event) => {
+      setActionFilter(event.target.value);
+      setCurrentPage(1);
+    }}
+    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
+  >
+    <option value="all">All Actions</option>
+    {actions.map((action) => (
+      <option key={action} value={action}>
+        {action.replaceAll("_", " ")}
+      </option>
+    ))}
+  </select>
 
-          <select
-            value={entityFilter}
-            onChange={(event) => {
-              setEntityFilter(event.target.value);
-              setCurrentPage(1);
-            }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
-          >
+  {/* Resource Filter */}
+  <select
+    value={entityFilter}
+    onChange={(event) => {
+      setEntityFilter(event.target.value);
+      setCurrentPage(1);
+    }}
+    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-blue-500"
+  >
+    <option value="all">All Resources</option>
+    {entityTypes.map((type) => (
+      <option key={type} value={type}>
+        {type}
+      </option>
+    ))}
+  </select>
 
-            <option value="all">All Resources</option>
-            {entityTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-          <button
-  type="button"
-  onClick={() => {
-    setSearch("");
-    setActionFilter("all");
-    setEntityFilter("all");
-    setStartDate("");
-    setEndDate("");
-    setCurrentPage(1);
-  }}
-  className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
->
-  Clear Filters
-</button>
-        </div>
+  {/* Clear Filters */}
+  <button
+    type="button"
+    onClick={() => {
+      setSearch("");
+      setActionFilter("all");
+      setEntityFilter("all");
+      setStartDate("");
+      setEndDate("");
+      setCurrentPage(1);
+    }}
+    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+  >
+    Clear Filters
+  </button>
+</div>
+
       </div>
 
       <div className="overflow-x-auto">
