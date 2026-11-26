@@ -1,5 +1,6 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
+import AnalyticsCharts from "@/components/dashboard/AnalyticsCharts";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { cookies } from "next/headers";
 import Link from "next/link";
@@ -20,6 +21,33 @@ interface RequestItem {
   created_at: string;
 }
 
+interface AnalyticsData {
+  summary: {
+    total_requests: number;
+    pending_requests: number;
+    approved_requests: number;
+    rejected_requests: number;
+  };
+  monthly_trend: {
+    month: string;
+    total: number;
+  }[];
+  status_distribution: {
+    name: string;
+    total: number;
+  }[];
+  priority_distribution: {
+    name: string;
+    total: number;
+  }[];
+  approval_performance: {
+    total_approvals: number;
+    approved: number;
+    rejected: number;
+    approval_rate: number;
+  };
+}
+
 export default async function Home() {
   const user = await getAuthenticatedUser();
 
@@ -32,43 +60,64 @@ export default async function Home() {
     throw new Error("Authentication or API configuration is missing");
   }
 
-  // Fetch requests from FastAPI
-  const response = await fetch(`${apiUrl}/requests`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    cache: "no-store",
-  });
+  // Select the appropriate request endpoint based on user role.
+  const requestsEndpoint =
+    user.role === "employee"
+      ? "/requests/my-requests"
+      : user.role === "approver"
+        ? "/requests/pending-approvals"
+        : "/requests";
 
-  if (!response.ok) {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  // Fetch analytics and recent requests together.
+  const [analyticsResponse, requestsResponse] = await Promise.all([
+    fetch(`${apiUrl}/analytics/`, {
+      headers,
+      cache: "no-store",
+    }),
+    fetch(`${apiUrl}${requestsEndpoint}`, {
+      headers,
+      cache: "no-store",
+    }),
+  ]);
+
+  if (!analyticsResponse.ok) {
+    throw new Error("Unable to fetch dashboard analytics");
+  }
+
+  if (!requestsResponse.ok) {
     throw new Error("Unable to fetch dashboard requests");
   }
 
-  const requests: RequestItem[] = await response.json();
+  const analytics: AnalyticsData = await analyticsResponse.json();
+  const requests: RequestItem[] = await requestsResponse.json();
 
-  // Calculate statistics
+  // Statistics from the analytics API.
   const stats = [
     {
       title: "Total Requests",
-      value: requests.length,
+      value: analytics.summary.total_requests,
       icon: FileText,
       color: "bg-blue-50 text-blue-600",
     },
     {
       title: "Pending",
-      value: requests.filter((r) => r.status === "pending").length,
+      value: analytics.summary.pending_requests,
       icon: Clock,
       color: "bg-amber-50 text-amber-600",
     },
     {
       title: "Approved",
-      value: requests.filter((r) => r.status === "approved").length,
+      value: analytics.summary.approved_requests,
       icon: CheckCircle,
       color: "bg-green-50 text-green-600",
     },
     {
       title: "Rejected",
-      value: requests.filter((r) => r.status === "rejected").length,
+      value: analytics.summary.rejected_requests,
       icon: XCircle,
       color: "bg-red-50 text-red-600",
     },
@@ -80,9 +129,7 @@ export default async function Home() {
     <div className="min-h-screen bg-gray-50">
       <Sidebar role={user.role} />
 
-      {/* Main Content */}
       <main className="min-w-0 flex-1 p-4 pt-20 md:ml-64 md:p-8">
-
         <div className="mx-auto max-w-7xl">
 
           {/* Header */}
@@ -135,6 +182,14 @@ export default async function Home() {
             })}
           </section>
 
+          {/* Analytics Charts */}
+          <AnalyticsCharts
+            monthlyTrend={analytics.monthly_trend}
+            statusDistribution={analytics.status_distribution}
+            priorityDistribution={analytics.priority_distribution}
+            approvalPerformance={analytics.approval_performance}
+          />
+
           {/* Recent Requests */}
           <section className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 
@@ -157,7 +212,6 @@ export default async function Home() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-
                 <thead className="bg-gray-50 text-gray-500">
                   <tr>
                     <th className="px-6 py-4 font-medium">Request ID</th>
@@ -175,7 +229,6 @@ export default async function Home() {
 
                     return (
                       <tr key={request.id} className="hover:bg-gray-50">
-
                         <td className="px-6 py-4 font-medium text-gray-900">
                           REQ-{String(request.id).padStart(3, "0")}
                         </td>
@@ -223,7 +276,6 @@ export default async function Home() {
                             View Details
                           </Link>
                         </td>
-
                       </tr>
                     );
                   })}
@@ -239,7 +291,6 @@ export default async function Home() {
                     </tr>
                   )}
                 </tbody>
-
               </table>
             </div>
           </section>
